@@ -1,0 +1,248 @@
+[
+  {
+    "portfolioId": "plan_1774745212685",
+    "finalizedAt": "2026-03-29T00:47:17.218Z",
+    "client": {
+      "name": "Maddie",
+      "age": 21,
+      "riskLevel": "high",
+      "investmentAmount": 2000,
+      "timeHorizonYears": 15,
+      "monthlyContribution": 100,
+      "liquidityNeed": "high",
+      "needsIncome": true,
+      "goal": "aggressive_growth",
+      "preferredStockSectors": [
+        "Finance & Insurance",
+        "Technology & IT",
+        "Energy & Utilities"
+      ],
+      "wantsManualPortfolioChanges": true,
+      "manualReplacementTarget": "duol",
+      "manualReplacementTicker": "AMD",
+      "notes": "Prefers high-risk, high-return portfolio over long-term",
+      "portfolioName": "Random"
+    },
+    "holdings": [
+      {
+        "instrumentId": "hysa",
+        "ticker": "HYSA",
+        "quantity": 207.4,
+        "costBasis": 1
+      },
+      {
+        "instrumentId": "sgov",
+        "ticker": "SGOV",
+        "quantity": 0.469,
+        "costBasis": 100.65
+      },
+      {
+        "instrumentId": "bnd",
+        "ticker": "BND",
+        "quantity": 3.0146,
+        "costBasis": 73.11
+      },
+      {
+        "instrumentId": "tip",
+        "ticker": "TIP",
+        "quantity": 0.7185,
+        "costBasis": 109.67
+      },
+      {
+        "instrumentId": "vti",
+        "ticker": "VTI",
+        "quantity": 1.3076,
+        "costBasis": 313.09
+      },
+      {
+        "instrumentId": "vxus",
+        "ticker": "VXUS",
+        "quantity": 2.9509,
+        "costBasis": 74.69
+      },
+      {
+        "instrumentId": "vnq",
+        "ticker": "VNQ",
+        "quantity": 2.354,
+        "costBasis": 87
+      },
+      {
+        "instrumentId": "gld",
+        "ticker": "GLD",
+        "quantity": 0.19,
+        "costBasis": 414.7
+      },
+      {
+        "instrumentId": "qqq",
+        "ticker": "QQQ",
+        "quantity": 0.2521,
+        "costBasis": 562.58
+      },
+      {
+        "instrumentId": "msft",
+        "ticker": "MSFT",
+        "quantity": 0.5421,
+        "costBasis": 356.77
+      },
+      {
+        "instrumentId": "nvda",
+        "ticker": "NVDA",
+        "quantity": 0.7784,
+        "costBasis": 167.52
+      },
+      {
+        "instrumentId": "xom",
+        "ticker": "XOM",
+        "quantity": 0.579,
+        "costBasis": 170.99
+      },
+      {
+        "instrumentId": "jpm",
+        "ticker": "JPM",
+        "quantity": 0.0156,
+        "costBasis": 282.84
+      },
+      {
+        "instrumentId": "nee",
+        "ticker": "NEE",
+        "quantity": 0.0481,
+        "costBasis": 91.4
+      },
+      {
+        "instrumentId": "acn",
+        "ticker": "ACN",
+        "quantity": 0.0228,
+        "costBasis": 192.6
+      },
+      {
+        "instrumentId": "custom-amd",
+        "ticker": "AMD",
+        "quantity": 0.0218,
+        "costBasis": 201.99
+      }
+    ],
+    "snapshots": [
+      {
+        "date": "2026-03-29",
+        "portfolioValue": 1995.03,
+        "positions": [
+          {
+            "instrumentId": "hysa",
+            "ticker": "HYSA",
+            "marketValue": 157.4,
+            "price": 1,
+            "dailyChangePct": 0.36
+          },
+          {
+            "instrumentId": "sgov",
+            "ticker": "SGOV",
+            "marketValue": 47.2,
+            "price": 100.65,
+            "dailyChangePct": 0.03
+          },
+          {
+            "instrumentId": "bnd",
+            "ticker": "BND",
+            "marketValue": 220.4,
+            "price": 73.11,
+            "dailyChangePct": -2.55
+          },
+          {
+            "instrumentId": "tip",
+            "ticker": "TIP",
+            "marketValue": 78.8,
+            "price": 109.67,
+            "dailyChangePct": -1.83
+          },
+          {
+            "instrumentId": "vti",
+            "ticker": "VTI",
+            "marketValue": 409.4,
+            "price": 313.09,
+            "dailyChangePct": -8.05
+          },
+          {
+            "instrumentId": "vxus",
+            "ticker": "VXUS",
+            "marketValue": 220.4,
+            "price": 74.69,
+            "dailyChangePct": -11.04
+          },
+          {
+            "instrumentId": "vnq",
+            "ticker": "VNQ",
+            "marketValue": 204.8,
+            "price": 87,
+            "dailyChangePct": -8.92
+          },
+          {
+            "instrumentId": "gld",
+            "ticker": "GLD",
+            "marketValue": 78.79,
+            "price": 414.7,
+            "dailyChangePct": -13.15
+          },
+          {
+            "instrumentId": "qqq",
+            "ticker": "QQQ",
+            "marketValue": 141.83,
+            "price": 562.58,
+            "dailyChangePct": -7.66
+          },
+          {
+            "instrumentId": "msft",
+            "ticker": "MSFT",
+            "marketValue": 193.41,
+            "price": 356.77,
+            "dailyChangePct": -11.19
+          },
+          {
+            "instrumentId": "nvda",
+            "ticker": "NVDA",
+            "marketValue": 130.4,
+            "price": 167.52,
+            "dailyChangePct": -9.39
+          },
+          {
+            "instrumentId": "xom",
+            "ticker": "XOM",
+            "marketValue": 99,
+            "price": 170.99,
+            "dailyChangePct": 15.11
+          },
+          {
+            "instrumentId": "jpm",
+            "ticker": "JPM",
+            "marketValue": 4.41,
+            "price": 282.84,
+            "dailyChangePct": -7.61
+          },
+          {
+            "instrumentId": "nee",
+            "ticker": "NEE",
+            "marketValue": 4.4,
+            "price": 91.4,
+            "dailyChangePct": -0.64
+          },
+          {
+            "instrumentId": "acn",
+            "ticker": "ACN",
+            "marketValue": 4.39,
+            "price": 192.6,
+            "dailyChangePct": -7.13
+          }
+        ]
+      }
+    ],
+    "notes": [
+      "2026-03-29T01:39:06.490Z: Renamed tracked portfolio to Random.",
+      "2026-03-29T01:30:01.219Z: Recorded a BUY intent for HYSA at approximately $1.00 per unit.",
+      "2026-03-29T01:30:01.028Z: Recorded a BUY intent for HYSA at approximately $1.00 per unit.",
+      "2026-03-29T01:29:59.687Z: Recorded a BUY intent for HYSA at approximately $1.00 per unit.",
+      "2026-03-29T01:29:48.745Z: Recorded a BUY intent for HYSA at approximately $1.00 per unit.",
+      "2026-03-29T01:29:45.784Z: Recorded a BUY intent for HYSA at approximately $1.00 per unit.",
+      "2026-03-29T00:47:17.219Z: Portfolio finalized for tracking. This system tracks performance only and does not place trades."
+    ],
+    "portfolioName": "Random"
+  }
+]
