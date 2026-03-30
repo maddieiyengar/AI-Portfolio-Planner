@@ -18,6 +18,10 @@ function workbookCell(value: string | number) {
   return `<Cell><Data ss:Type="String">${escapeXml(value)}</Data></Cell>`;
 }
 
+function hyperlinkCell(label: string, url: string) {
+  return `<Cell ss:StyleID="CenteredLink" ss:HRef="${escapeXml(url)}"><Data ss:Type="String">${escapeXml(label)}</Data></Cell>`;
+}
+
 function buildWorkbookXml(
   portfolioName: string,
   rows: Array<{
@@ -50,7 +54,19 @@ function buildWorkbookXml(
           workbookCell(row.marketValue),
           workbookCell(row.dailyChangePct ?? "")
         ].join("")}</Row>`
-    )
+    ),
+    `<Row/>`,
+    `<Row ss:AutoFitHeight="0" ss:Height="24">
+      <Cell ss:StyleID="Centered" ss:MergeAcross="5">
+        <Data ss:Type="String">Built by Maddie Iyengar</Data>
+      </Cell>
+    </Row>`,
+    `<Row>
+      <Cell ss:StyleID="Centered" ss:MergeAcross="1"/>
+      ${hyperlinkCell("GitHub", "https://github.com/maddieiyengar/AI-Portfolio-Planner")}
+      <Cell ss:StyleID="Centered"><Data ss:Type="String">|</Data></Cell>
+      ${hyperlinkCell("LinkedIn", "https://www.linkedin.com/in/maddieiyengar/")}
+    </Row>`
   ].join("");
 
   return `<?xml version="1.0"?>
@@ -60,6 +76,16 @@ function buildWorkbookXml(
  xmlns:x="urn:schemas-microsoft-com:office:excel"
  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
  xmlns:html="http://www.w3.org/TR/REC-html40">
+ <Styles>
+  <Style ss:ID="Centered">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:Bold="1"/>
+  </Style>
+  <Style ss:ID="CenteredLink">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Font ss:Color="#1a73e8" ss:Underline="Single"/>
+  </Style>
+ </Styles>
  <Worksheet ss:Name="${escapeXml(portfolioName.slice(0, 31) || "Portfolio Export")}">
   <Table>
    ${xmlRows}
@@ -113,7 +139,10 @@ export async function GET(request: Request) {
     }
 
     const workbook = buildWorkbookXml(portfolio.portfolioName, rows);
-    const fileName = `${portfolio.portfolioName.replace(/[^a-z0-9-_]+/gi, "-").replace(/^-+|-+$/g, "") || "portfolio"}-${start}-to-${end}.xls`;
+    const safePortfolioName =
+      portfolio.portfolioName.replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "") || "Portfolio";
+    const dateRange = `${start}_to_${end}`.replace(/[^0-9a-z_]+/gi, "_");
+    const fileName = `${safePortfolioName}_${dateRange}.xls`;
 
     return new NextResponse(workbook, {
       status: 200,
