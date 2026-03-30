@@ -100,6 +100,37 @@ function portfolioStartDate(portfolio: FinalizedPortfolio) {
   return portfolio.finalizedAt.slice(0, 10);
 }
 
+function valueAtOrBefore(points: InstrumentChart["points"], date: string) {
+  let match = points[0] || null;
+
+  for (const point of points) {
+    if (point.date > date) {
+      break;
+    }
+    match = point;
+  }
+
+  return match;
+}
+
+function pointsForWindow(points: InstrumentChart["points"], start: string, end: string) {
+  const filtered = points.filter((point) => point.date >= start && point.date <= end);
+
+  if (filtered.length >= 2) {
+    return filtered;
+  }
+
+  const startPoint = valueAtOrBefore(points, start);
+  const endPoint = valueAtOrBefore(points, end);
+  const synthetic = [startPoint && { ...startPoint, date: start }, endPoint && { ...endPoint, date: end }].filter(
+    (point): point is NonNullable<typeof point> => Boolean(point)
+  );
+
+  return synthetic.filter(
+    (point, index, array) => array.findIndex((candidate) => candidate.date === point.date) === index
+  );
+}
+
 export function PortfolioAgent() {
   const today = new Date().toISOString().slice(0, 10);
   const [profile, setProfile] = useState<ClientProfile>(initialProfile);
@@ -211,7 +242,7 @@ export function PortfolioAgent() {
   }
 
   function filterPoints(points: InstrumentChart["points"]) {
-    return points.filter((point) => point.date >= dateWindow.start && point.date <= dateWindow.end);
+    return pointsForWindow(points, dateWindow.start, dateWindow.end);
   }
 
   function updateDateWindow(boundary: "start" | "end", value: string) {
@@ -239,7 +270,7 @@ export function PortfolioAgent() {
 
   function filterTrackedPoints(portfolio: FinalizedPortfolio, points: InstrumentChart["points"]) {
     const window = getTrackedDateWindow(portfolio);
-    return points.filter((point) => point.date >= window.start && point.date <= window.end);
+    return pointsForWindow(points, window.start, window.end);
   }
 
   function updateTrackedDateWindow(
