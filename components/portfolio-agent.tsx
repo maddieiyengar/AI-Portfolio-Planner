@@ -371,6 +371,17 @@ export function PortfolioAgent() {
     await refreshTrackedPortfolios();
   }
 
+  function exportTrackedPortfolio(portfolioId: string) {
+    const trackedWindow = getTrackedDateWindow(portfolioId);
+    const searchParams = new URLSearchParams({
+      portfolioId,
+      start: trackedWindow.start,
+      end: trackedWindow.end
+    });
+
+    window.location.href = `/api/portfolio/export?${searchParams.toString()}`;
+  }
+
   return (
     <main className="shell">
       <section className="hero">
@@ -606,32 +617,40 @@ export function PortfolioAgent() {
                         Save name
                       </button>
                     </div>
+                    <div className="date-grid">
+                      <label>
+                        <span>Start date</span>
+                        <input
+                          type="date"
+                          value={trackedWindow.start}
+                          max={today}
+                          onChange={(event) =>
+                            updateTrackedDateWindow(portfolio.portfolioId, "start", event.target.value)
+                          }
+                        />
+                      </label>
+                      <label>
+                        <span>End date</span>
+                        <input
+                          type="date"
+                          value={trackedWindow.end}
+                          max={today}
+                          onChange={(event) =>
+                            updateTrackedDateWindow(portfolio.portfolioId, "end", event.target.value)
+                          }
+                        />
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      className="secondary"
+                      onClick={() => exportTrackedPortfolio(portfolio.portfolioId)}
+                      disabled={pending}
+                    >
+                      Export date range to Excel
+                    </button>
                     {showingCharts ? (
                       <div className="tracker-charts">
-                        <div className="date-grid">
-                          <label>
-                            <span>Start date</span>
-                            <input
-                              type="date"
-                              value={trackedWindow.start}
-                              max={today}
-                              onChange={(event) =>
-                                updateTrackedDateWindow(portfolio.portfolioId, "start", event.target.value)
-                              }
-                            />
-                          </label>
-                          <label>
-                            <span>End date</span>
-                            <input
-                              type="date"
-                              value={trackedWindow.end}
-                              max={today}
-                              onChange={(event) =>
-                                updateTrackedDateWindow(portfolio.portfolioId, "end", event.target.value)
-                              }
-                            />
-                          </label>
-                        </div>
                         <PerformanceChart
                           title={`${portfolio.portfolioName} overall performance`}
                           points={filterTrackedPoints(portfolio.portfolioId, charts.portfolio)}

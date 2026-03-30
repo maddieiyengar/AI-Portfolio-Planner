@@ -6,6 +6,7 @@ Portfolio Agent is a Next.js application that:
 - shows live instrument prices plus trailing performance for `1M`, `6M`, `1Y`, `5Y`, and `10Y`
 - analyzes headline sentiment and past returns to produce a forward-looking outlook score
 - tracks finalized portfolios every day and updates holdings only when a client says they want to buy or sell
+- exports tracked portfolio history for a user-selected date range into an Excel-friendly spreadsheet
 - never handles money, routes orders, or executes trades
 
 ## Run locally
