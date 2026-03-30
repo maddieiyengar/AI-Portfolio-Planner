@@ -1,15 +1,9 @@
 import { NextResponse } from "next/server";
 import { buildChartsForFinalizedPortfolio, buildChartsForPlan } from "@/lib/charting";
-import { requireRouteSession } from "@/lib/supabase/route";
 import { FinalizedPortfolio, PortfolioPlan } from "@/lib/types";
 
 export async function POST(request: Request) {
   try {
-    const session = await requireRouteSession();
-    if (session.response) {
-      return session.response;
-    }
-
     const { plan, trackedPortfolio } = (await request.json()) as {
       plan?: PortfolioPlan;
       trackedPortfolio?: FinalizedPortfolio;

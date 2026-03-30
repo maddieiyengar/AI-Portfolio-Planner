@@ -1,21 +1,15 @@
 import { NextResponse } from "next/server";
 import { applyTradeIntent, captureDailySnapshot } from "@/lib/monitor";
-import { requireRouteSession } from "@/lib/supabase/route";
 import { getFinalizedPortfolioById, readFinalizedPortfolios, upsertFinalizedPortfolio } from "@/lib/storage";
 import { TradeIntent } from "@/lib/types";
 
 export async function GET() {
   try {
-    const session = await requireRouteSession();
-    if (session.response) {
-      return session.response;
-    }
-
-    const portfolios = await readFinalizedPortfolios(session.supabase, session.user.id);
+    const portfolios = await readFinalizedPortfolios();
     const updated = await Promise.all(
       portfolios.map(async (portfolio) => {
         const next = await captureDailySnapshot(portfolio);
-        await upsertFinalizedPortfolio(session.supabase, session.user.id, next);
+        await upsertFinalizedPortfolio(next);
         return next;
       })
     );
@@ -31,20 +25,15 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const session = await requireRouteSession();
-    if (session.response) {
-      return session.response;
-    }
-
     const { portfolioId, trade } = (await request.json()) as { portfolioId: string; trade: TradeIntent };
-    const portfolio = await getFinalizedPortfolioById(session.supabase, session.user.id, portfolioId);
+    const portfolio = await getFinalizedPortfolioById(portfolioId);
 
     if (!portfolio) {
       return NextResponse.json({ error: "Tracked portfolio not found." }, { status: 404 });
     }
 
     const updated = await applyTradeIntent(portfolio, trade);
-    await upsertFinalizedPortfolio(session.supabase, session.user.id, updated);
+    await upsertFinalizedPortfolio(updated);
     return NextResponse.json({ portfolio: updated });
   } catch (error) {
     return NextResponse.json(
@@ -56,16 +45,11 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   try {
-    const session = await requireRouteSession();
-    if (session.response) {
-      return session.response;
-    }
-
     const { portfolioId, portfolioName } = (await request.json()) as {
       portfolioId: string;
       portfolioName: string;
     };
-    const portfolio = await getFinalizedPortfolioById(session.supabase, session.user.id, portfolioId);
+    const portfolio = await getFinalizedPortfolioById(portfolioId);
 
     if (!portfolio) {
       return NextResponse.json({ error: "Tracked portfolio not found." }, { status: 404 });
@@ -80,7 +64,7 @@ export async function PUT(request: Request) {
     portfolio.client.portfolioName = trimmedName;
     portfolio.notes.unshift(`${new Date().toISOString()}: Renamed tracked portfolio to ${trimmedName}.`);
 
-    await upsertFinalizedPortfolio(session.supabase, session.user.id, portfolio);
+    await upsertFinalizedPortfolio(portfolio);
     return NextResponse.json({ portfolio });
   } catch (error) {
     return NextResponse.json(

@@ -1,17 +1,11 @@
 import { NextResponse } from "next/server";
 import { captureDailySnapshot } from "@/lib/monitor";
 import { estimateHoldingsFromPlan } from "@/lib/portfolio-engine";
-import { requireRouteSession } from "@/lib/supabase/route";
 import { upsertFinalizedPortfolio } from "@/lib/storage";
 import { PortfolioPlan } from "@/lib/types";
 
 export async function POST(request: Request) {
   try {
-    const session = await requireRouteSession();
-    if (session.response) {
-      return session.response;
-    }
-
     const { plan } = (await request.json()) as { plan: PortfolioPlan };
     const finalized = await captureDailySnapshot({
       portfolioId: plan.id,
@@ -25,7 +19,7 @@ export async function POST(request: Request) {
       ]
     });
 
-    await upsertFinalizedPortfolio(session.supabase, session.user.id, finalized);
+    await upsertFinalizedPortfolio(finalized);
     return NextResponse.json({ portfolio: finalized });
   } catch (error) {
     return NextResponse.json(
