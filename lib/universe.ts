@@ -69,7 +69,7 @@ export const INSTRUMENT_UNIVERSE: Instrument[] = [
     description: "Broad US equity market exposure for long-term growth.",
     riskBand: "medium",
     expenseRatio: 0.03,
-    tags: ["equity", "growth", "broad market"]
+    tags: ["equity", "growth", "broad market", "diversified"]
   },
   {
     id: "msft",
@@ -229,7 +229,7 @@ export const INSTRUMENT_UNIVERSE: Instrument[] = [
     description: "Diversified non-US developed and emerging market equities.",
     riskBand: "medium",
     expenseRatio: 0.07,
-    tags: ["equity", "international", "diversification"]
+    tags: ["equity", "international", "diversification", "diversified"]
   },
   {
     id: "vnq",
@@ -239,7 +239,8 @@ export const INSTRUMENT_UNIVERSE: Instrument[] = [
     description: "US REIT exposure for income and real asset diversification.",
     riskBand: "medium",
     expenseRatio: 0.13,
-    tags: ["real estate", "income", "inflation"]
+    tags: ["real estate", "income", "inflation"],
+    sectors: ["Construction & Real Estate"]
   },
   {
     id: "gld",
@@ -259,7 +260,7 @@ export const INSTRUMENT_UNIVERSE: Instrument[] = [
     description: "Growth-heavy Nasdaq 100 exposure with higher upside and volatility.",
     riskBand: "high",
     expenseRatio: 0.20,
-    tags: ["equity", "technology", "growth"]
+    tags: ["equity", "technology", "growth", "diversified"]
   }
 ];
 

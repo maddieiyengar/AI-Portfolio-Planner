@@ -241,6 +241,48 @@ function describePortfolio(client: ClientProfile) {
   return "This allocation targets long-horizon growth with a larger equity sleeve, combining diversified ETFs with selective individual stocks while preserving some ballast in bonds, Treasuries, and hedges to limit concentration risk.";
 }
 
+function buildSectorSpecificityNote(client: ClientProfile, instrument: Instrument) {
+  const selectedSectors = client.preferredStockSectors || [];
+  const instrumentSectors = instrument.sectors || [];
+
+  if (selectedSectors.length === 0) {
+    if (instrument.tags.includes("diversified")) {
+      return "keeps exposure spread across several industries.";
+    }
+
+    if (instrumentSectors.length === 1) {
+      return `adds focused exposure to ${instrumentSectors[0]}.`;
+    }
+
+    if (instrumentSectors.length > 1) {
+      return `spans several related industries, including ${instrumentSectors.join(", ")}.`;
+    }
+
+    return "adds diversification outside any single industry bucket.";
+  }
+
+  const selectedSectorSet = new Set(selectedSectors.map((sector) => sector.toLowerCase()));
+  const overlappingSectors = instrumentSectors.filter((sector) => selectedSectorSet.has(sector.toLowerCase()));
+
+  if (instrument.tags.includes("diversified")) {
+    return "keeps diversification across several industries instead of concentrating in a single selected sector.";
+  }
+
+  if (overlappingSectors.length === 1 && instrumentSectors.length === 1) {
+    return `gives direct exposure to the client's selected sector: ${overlappingSectors[0]}.`;
+  }
+
+  if (overlappingSectors.length > 0) {
+    return `touches the client's selected sectors through a mixed-industry exposure: ${overlappingSectors.join(", ")}.`;
+  }
+
+  if (instrumentSectors.length === 1) {
+    return `adds a distinct sleeve in ${instrumentSectors[0]} rather than duplicating the selected stock sectors.`;
+  }
+
+  return "adds diversification through asset-class exposure rather than a single-sector stock bet.";
+}
+
 export async function generatePortfolioPlan(client: ClientProfile): Promise<PortfolioPlan> {
   const weights = applyProfileAdjustments(client);
   const initialInstruments = Object.keys(weights)
@@ -268,11 +310,7 @@ export async function generatePortfolioPlan(client: ClientProfile): Promise<Port
         name: instrument.name,
         weight,
         amount: Number((client.investmentAmount * weight).toFixed(2)),
-        rationale: `${instrument.description} Selected because it fits a ${client.riskLevel}-risk profile, supports a ${client.goal.replace("_", " ")} objective, and ${
-          (client.preferredStockSectors || []).length > 0
-            ? `leans toward the client's selected stock sectors: ${(client.preferredStockSectors || []).join(", ")}.`
-            : "keeps the allocation diversified across the broader opportunity set."
-        }`,
+        rationale: `${instrument.description} Selected because it fits a ${client.riskLevel}-risk profile, supports a ${client.goal.replace("_", " ") } objective, and ${buildSectorSpecificityNote(client, instrument)}`,
         snapshot,
         expenseRatio: instrument.expenseRatio || 0,
         incomeYield: instrument.defaultYield || Math.max(0, (snapshot.returns["1Y"] || 0) / 4)

@@ -116,6 +116,7 @@ export function PortfolioAgent() {
       }
     >
   >({});
+  const [trackedDateWindows, setTrackedDateWindows] = useState<Record<string, { start: string; end: string }>>({});
   const [activeTrackedChartId, setActiveTrackedChartId] = useState<string | null>(null);
   const [renameDrafts, setRenameDrafts] = useState<Record<string, string>>({});
   const [selectedRange, setSelectedRange] = useState<(typeof RANGE_PRESETS)[number]["label"]>("1Y");
@@ -223,6 +224,30 @@ export function PortfolioAgent() {
     });
   }
 
+  function getTrackedDateWindow(portfolioId: string) {
+    return trackedDateWindows[portfolioId] || dateWindow;
+  }
+
+  function filterTrackedPoints(portfolioId: string, points: InstrumentChart["points"]) {
+    const window = getTrackedDateWindow(portfolioId);
+    return points.filter((point) => point.date >= window.start && point.date <= window.end);
+  }
+
+  function updateTrackedDateWindow(portfolioId: string, boundary: "start" | "end", value: string) {
+    const safeValue = value > today ? today : value;
+    setTrackedDateWindows((current) => {
+      const existing = current[portfolioId] || dateWindow;
+      const next = { ...existing, [boundary]: safeValue };
+      return {
+        ...current,
+        [portfolioId]:
+          next.start > next.end
+            ? { start: safeValue, end: safeValue }
+            : next
+      };
+    });
+  }
+
   async function generatePortfolio() {
     setError(null);
     const response = await fetch("/api/portfolio/generate", {
@@ -315,6 +340,10 @@ export function PortfolioAgent() {
     setTrackedChartData((current) => ({
       ...current,
       [portfolio.portfolioId]: payload.charts
+    }));
+    setTrackedDateWindows((current) => ({
+      ...current,
+      [portfolio.portfolioId]: current[portfolio.portfolioId] || { ...dateWindow }
     }));
     setActiveTrackedChartId(portfolio.portfolioId);
   }
@@ -522,6 +551,7 @@ export function PortfolioAgent() {
                 const latest = portfolio.snapshots.at(-1);
                 const charts = trackedChartData[portfolio.portfolioId];
                 const showingCharts = activeTrackedChartId === portfolio.portfolioId && charts;
+                const trackedWindow = getTrackedDateWindow(portfolio.portfolioId);
                 return (
                   <article key={portfolio.portfolioId} className="tracker-card">
                     <div className="tracker-head">
@@ -578,21 +608,45 @@ export function PortfolioAgent() {
                     </div>
                     {showingCharts ? (
                       <div className="tracker-charts">
+                        <div className="date-grid">
+                          <label>
+                            <span>Start date</span>
+                            <input
+                              type="date"
+                              value={trackedWindow.start}
+                              max={today}
+                              onChange={(event) =>
+                                updateTrackedDateWindow(portfolio.portfolioId, "start", event.target.value)
+                              }
+                            />
+                          </label>
+                          <label>
+                            <span>End date</span>
+                            <input
+                              type="date"
+                              value={trackedWindow.end}
+                              max={today}
+                              onChange={(event) =>
+                                updateTrackedDateWindow(portfolio.portfolioId, "end", event.target.value)
+                              }
+                            />
+                          </label>
+                        </div>
                         <PerformanceChart
                           title={`${portfolio.portfolioName} overall performance`}
-                          points={filterPoints(charts.portfolio)}
-                          selectedStart={dateWindow.start}
-                          selectedEnd={dateWindow.end}
+                          points={filterTrackedPoints(portfolio.portfolioId, charts.portfolio)}
+                          selectedStart={trackedWindow.start}
+                          selectedEnd={trackedWindow.end}
                         />
                         <div className="cards">
                           {charts.instruments.map((chart) => (
                             <PerformanceChart
                               key={`${portfolio.portfolioId}-${chart.instrumentId}`}
                               title={`${chart.ticker} performance`}
-                              points={filterPoints(chart.points)}
+                              points={filterTrackedPoints(portfolio.portfolioId, chart.points)}
                               height={210}
-                              selectedStart={dateWindow.start}
-                              selectedEnd={dateWindow.end}
+                              selectedStart={trackedWindow.start}
+                              selectedEnd={trackedWindow.end}
                             />
                           ))}
                         </div>
