@@ -13,7 +13,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        {children}
+        <footer className="site-footer">
+          <p>
+            Built by Maddie Iyengar using Codex |{" "}
+            <a href="https://github.com/maddieiyengar" target="_blank" rel="noreferrer">
+              GitHub
+            </a>{" "}
+            |{" "}
+            <a href="https://www.linkedin.com/in/maddieiyengar/" target="_blank" rel="noreferrer">
+              LinkedIn
+            </a>
+          </p>
+        </footer>
+      </body>
     </html>
   );
 }

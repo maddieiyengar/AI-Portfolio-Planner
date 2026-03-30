@@ -27,6 +27,10 @@ body {
   color: var(--ink);
 }
 
+a {
+  color: inherit;
+}
+
 button,
 input,
 select,
@@ -412,6 +416,25 @@ textarea {
 
 .results {
   margin-top: 24px;
+}
+
+.site-footer {
+  padding: 0 16px 32px;
+  text-align: center;
+  color: var(--muted);
+}
+
+.site-footer p {
+  margin: 0;
+}
+
+.site-footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.site-footer a:hover {
+  text-decoration: underline;
 }
 
 .results-head {
