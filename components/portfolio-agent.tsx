@@ -96,6 +96,10 @@ function percent(value: number | null) {
   return `${value.toFixed(2)}%`;
 }
 
+function portfolioStartDate(portfolio: FinalizedPortfolio) {
+  return portfolio.finalizedAt.slice(0, 10);
+}
+
 export function PortfolioAgent() {
   const today = new Date().toISOString().slice(0, 10);
   const [profile, setProfile] = useState<ClientProfile>(initialProfile);
@@ -224,25 +228,47 @@ export function PortfolioAgent() {
     });
   }
 
-  function getTrackedDateWindow(portfolioId: string) {
-    return trackedDateWindows[portfolioId] || dateWindow;
+  function getTrackedDateWindow(portfolio: FinalizedPortfolio) {
+    return (
+      trackedDateWindows[portfolio.portfolioId] || {
+        start: portfolioStartDate(portfolio),
+        end: dateWindow.end
+      }
+    );
   }
 
-  function filterTrackedPoints(portfolioId: string, points: InstrumentChart["points"]) {
-    const window = getTrackedDateWindow(portfolioId);
+  function filterTrackedPoints(portfolio: FinalizedPortfolio, points: InstrumentChart["points"]) {
+    const window = getTrackedDateWindow(portfolio);
     return points.filter((point) => point.date >= window.start && point.date <= window.end);
   }
 
-  function updateTrackedDateWindow(portfolioId: string, boundary: "start" | "end", value: string) {
+  function updateTrackedDateWindow(
+    portfolio: FinalizedPortfolio,
+    boundary: "start" | "end",
+    value: string
+  ) {
+    const minStart = portfolioStartDate(portfolio);
     const safeValue = value > today ? today : value;
     setTrackedDateWindows((current) => {
-      const existing = current[portfolioId] || dateWindow;
-      const next = { ...existing, [boundary]: safeValue };
+      const existing = current[portfolio.portfolioId] || {
+        start: minStart,
+        end: dateWindow.end
+      };
+      const next = {
+        ...existing,
+        [boundary]: boundary === "start" && safeValue < minStart ? minStart : safeValue
+      };
+      if (next.start < minStart) {
+        next.start = minStart;
+      }
       return {
         ...current,
-        [portfolioId]:
+        [portfolio.portfolioId]:
           next.start > next.end
-            ? { start: safeValue, end: safeValue }
+            ? {
+                start: boundary === "start" ? next.start : minStart > safeValue ? minStart : safeValue,
+                end: boundary === "start" ? next.start : minStart > safeValue ? minStart : safeValue
+              }
             : next
       };
     });
@@ -343,7 +369,11 @@ export function PortfolioAgent() {
     }));
     setTrackedDateWindows((current) => ({
       ...current,
-      [portfolio.portfolioId]: current[portfolio.portfolioId] || { ...dateWindow }
+      [portfolio.portfolioId]:
+        current[portfolio.portfolioId] || {
+          start: portfolioStartDate(portfolio),
+          end: dateWindow.end
+        }
     }));
     setActiveTrackedChartId(portfolio.portfolioId);
   }
@@ -371,10 +401,10 @@ export function PortfolioAgent() {
     await refreshTrackedPortfolios();
   }
 
-  function exportTrackedPortfolio(portfolioId: string) {
-    const trackedWindow = getTrackedDateWindow(portfolioId);
+  function exportTrackedPortfolio(portfolio: FinalizedPortfolio) {
+    const trackedWindow = getTrackedDateWindow(portfolio);
     const searchParams = new URLSearchParams({
-      portfolioId,
+      portfolioId: portfolio.portfolioId,
       start: trackedWindow.start,
       end: trackedWindow.end
     });
@@ -562,7 +592,7 @@ export function PortfolioAgent() {
                 const latest = portfolio.snapshots.at(-1);
                 const charts = trackedChartData[portfolio.portfolioId];
                 const showingCharts = activeTrackedChartId === portfolio.portfolioId && charts;
-                const trackedWindow = getTrackedDateWindow(portfolio.portfolioId);
+                    const trackedWindow = getTrackedDateWindow(portfolio);
                 return (
                   <article key={portfolio.portfolioId} className="tracker-card">
                     <div className="tracker-head">
@@ -618,33 +648,35 @@ export function PortfolioAgent() {
                       </button>
                     </div>
                     <div className="date-grid">
-                      <label>
-                        <span>Start date</span>
-                        <input
-                          type="date"
-                          value={trackedWindow.start}
-                          max={today}
-                          onChange={(event) =>
-                            updateTrackedDateWindow(portfolio.portfolioId, "start", event.target.value)
-                          }
-                        />
-                      </label>
-                      <label>
-                        <span>End date</span>
-                        <input
-                          type="date"
-                          value={trackedWindow.end}
-                          max={today}
-                          onChange={(event) =>
-                            updateTrackedDateWindow(portfolio.portfolioId, "end", event.target.value)
-                          }
-                        />
-                      </label>
+                          <label>
+                            <span>Start date</span>
+                            <input
+                              type="date"
+                              value={trackedWindow.start}
+                              min={portfolioStartDate(portfolio)}
+                              max={today}
+                              onChange={(event) =>
+                                updateTrackedDateWindow(portfolio, "start", event.target.value)
+                              }
+                            />
+                          </label>
+                          <label>
+                            <span>End date</span>
+                            <input
+                              type="date"
+                              value={trackedWindow.end}
+                              min={trackedWindow.start}
+                              max={today}
+                              onChange={(event) =>
+                                updateTrackedDateWindow(portfolio, "end", event.target.value)
+                              }
+                            />
+                          </label>
                     </div>
                     <button
                       type="button"
                       className="secondary"
-                      onClick={() => exportTrackedPortfolio(portfolio.portfolioId)}
+                      onClick={() => exportTrackedPortfolio(portfolio)}
                       disabled={pending}
                     >
                       Export to Excel
@@ -653,7 +685,7 @@ export function PortfolioAgent() {
                       <div className="tracker-charts">
                         <PerformanceChart
                           title={`${portfolio.portfolioName} overall performance`}
-                          points={filterTrackedPoints(portfolio.portfolioId, charts.portfolio)}
+                          points={filterTrackedPoints(portfolio, charts.portfolio)}
                           selectedStart={trackedWindow.start}
                           selectedEnd={trackedWindow.end}
                         />
@@ -662,7 +694,7 @@ export function PortfolioAgent() {
                             <PerformanceChart
                               key={`${portfolio.portfolioId}-${chart.instrumentId}`}
                               title={`${chart.ticker} performance`}
-                              points={filterTrackedPoints(portfolio.portfolioId, chart.points)}
+                              points={filterTrackedPoints(portfolio, chart.points)}
                               height={210}
                               selectedStart={trackedWindow.start}
                               selectedEnd={trackedWindow.end}
