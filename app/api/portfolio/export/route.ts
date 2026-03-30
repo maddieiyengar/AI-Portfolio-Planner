@@ -63,7 +63,7 @@ function buildWorkbookXml(
     </Row>`,
     `<Row>
       <Cell ss:StyleID="Centered" ss:MergeAcross="1"/>
-      ${hyperlinkCell("GitHub", "https://github.com/maddieiyengar/AI-Portfolio-Planner")}
+      ${hyperlinkCell("GitHub", "https://github.com/maddieiyengar")}
       <Cell ss:StyleID="Centered"><Data ss:Type="String">|</Data></Cell>
       ${hyperlinkCell("LinkedIn", "https://www.linkedin.com/in/maddieiyengar/")}
     </Row>`
