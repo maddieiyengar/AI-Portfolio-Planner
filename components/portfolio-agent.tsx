@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { PerformanceChart } from "@/components/performance-chart";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { ClientProfile, FinalizedPortfolio, InstrumentChart, PortfolioPlan } from "@/lib/types";
 
 const SECTOR_OPTIONS = [
@@ -96,7 +98,12 @@ function percent(value: number | null) {
   return `${value.toFixed(2)}%`;
 }
 
-export function PortfolioAgent() {
+type Props = {
+  userEmail: string;
+};
+
+export function PortfolioAgent({ userEmail }: Props) {
+  const router = useRouter();
   const today = new Date().toISOString().slice(0, 10);
   const [profile, setProfile] = useState<ClientProfile>(initialProfile);
   const [plan, setPlan] = useState<PortfolioPlan | null>(null);
@@ -371,8 +378,20 @@ export function PortfolioAgent() {
     await refreshTrackedPortfolios();
   }
 
+  async function signOut() {
+    const supabase = createSupabaseBrowserClient();
+    await supabase.auth.signOut();
+    router.refresh();
+  }
+
   return (
     <main className="shell">
+      <section className="topbar">
+        <p className="caption">Signed in as {userEmail}</p>
+        <button type="button" className="secondary" onClick={() => void signOut()}>
+          Sign out
+        </button>
+      </section>
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">AI Portfolio Planning Desk</p>

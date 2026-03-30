@@ -17,6 +17,21 @@ npm run dev
 
 Then open `http://localhost:3000`.
 
+## Supabase setup
+
+This app now expects Supabase for authentication and saved portfolio storage.
+
+1. Create a Supabase project.
+2. Copy `.env.example` to `.env.local`.
+3. Add:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+4. Run the SQL in `supabase/schema.sql` in the Supabase SQL editor.
+5. In Supabase Auth, enable email/password sign-in.
+6. If email confirmation is enabled, set your site URL and redirect URL to include `/auth/confirm`.
+
+After that, users can sign up, sign in, and save portfolios to their own account.
+
 ## Monitoring model
 
 - Finalized portfolios are stored in `data/portfolios.json`.
