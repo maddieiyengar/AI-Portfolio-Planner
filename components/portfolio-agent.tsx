@@ -647,7 +647,7 @@ export function PortfolioAgent() {
                       onClick={() => exportTrackedPortfolio(portfolio.portfolioId)}
                       disabled={pending}
                     >
-                      Export date range to Excel
+                      Export to Excel
                     </button>
                     {showingCharts ? (
                       <div className="tracker-charts">

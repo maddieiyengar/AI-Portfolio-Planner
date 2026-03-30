@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { buildChartsForFinalizedPortfolio } from "@/lib/charting";
 import { getFinalizedPortfolioById } from "@/lib/storage";
 
 function escapeXml(value: string) {
@@ -26,6 +27,7 @@ function buildWorkbookXml(
   portfolioName: string,
   rows: Array<{
     date: string;
+    dataType: string;
     portfolioValue: number;
     ticker: string;
     price: number;
@@ -35,6 +37,7 @@ function buildWorkbookXml(
 ) {
   const header = [
     "Snapshot Date",
+    "Data Type",
     "Portfolio Value",
     "Ticker",
     "Price",
@@ -48,6 +51,7 @@ function buildWorkbookXml(
       (row) =>
         `<Row>${[
           workbookCell(row.date),
+          workbookCell(row.dataType),
           workbookCell(row.portfolioValue),
           workbookCell(row.ticker),
           workbookCell(row.price),
@@ -118,11 +122,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Tracked portfolio not found." }, { status: 404 });
     }
 
-    const rows = portfolio.snapshots
+    let rows = portfolio.snapshots
       .filter((snapshot) => snapshot.date >= start && snapshot.date <= end)
       .flatMap((snapshot) =>
         snapshot.positions.map((position) => ({
           date: snapshot.date,
+          dataType: "Tracked Snapshot",
           portfolioValue: snapshot.portfolioValue,
           ticker: position.ticker,
           price: position.price,
@@ -132,8 +137,49 @@ export async function GET(request: Request) {
       );
 
     if (rows.length === 0) {
+      const charts = await buildChartsForFinalizedPortfolio(portfolio);
+      const pointsByInstrument = Object.fromEntries(
+        charts.instruments.map((instrumentChart) => [
+          instrumentChart.instrumentId,
+          instrumentChart.points.filter((point) => point.date >= start && point.date <= end)
+        ])
+      );
+      const portfolioPoints = charts.portfolio.filter((point) => point.date >= start && point.date <= end);
+
+      rows = portfolioPoints.flatMap((portfolioPoint) =>
+        portfolio.holdings.flatMap((holding) => {
+          const points = pointsByInstrument[holding.instrumentId] || [];
+          const pointIndex = points.findIndex((point) => point.date === portfolioPoint.date);
+          const point = pointIndex >= 0 ? points[pointIndex] : null;
+
+          if (!point) {
+            return [];
+          }
+
+          const previousPoint = pointIndex > 0 ? points[pointIndex - 1] : null;
+          const dailyChangePct =
+            previousPoint && previousPoint.value > 0
+              ? Number((((point.value - previousPoint.value) / previousPoint.value) * 100).toFixed(2))
+              : null;
+
+          return [
+            {
+              date: portfolioPoint.date,
+              dataType: point.kind === "historical" ? "Historical If Invested" : "Forecast If Invested",
+              portfolioValue: portfolioPoint.value,
+              ticker: holding.ticker,
+              price: point.value,
+              marketValue: Number((holding.quantity * point.value).toFixed(2)),
+              dailyChangePct
+            }
+          ];
+        })
+      );
+    }
+
+    if (rows.length === 0) {
       return NextResponse.json(
-        { error: "No tracked portfolio data exists in the selected date range." },
+        { error: "No portfolio data exists in the selected date range." },
         { status: 404 }
       );
     }
