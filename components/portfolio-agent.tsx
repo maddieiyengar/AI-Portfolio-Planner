@@ -1250,27 +1250,25 @@ export function PortfolioAgent() {
             </div>
             <div className="suggestion-box">
               <strong>Remove positions</strong>
-              <ul className="suggestion-list">
+              <div className="check-grid removal-grid">
                 {plan.allocations.map((allocation) => {
                   const excluded = (profile.manualExcludedInstrumentIds || []).includes(allocation.instrumentId);
                   return (
-                    <li key={`remove-${allocation.instrumentId}`}>
-                      <label className="check-pill">
-                        <input
-                          type="checkbox"
-                          checked={excluded}
-                          onChange={() => toggleManualExclusion(allocation.instrumentId)}
-                          disabled={
-                            !excluded &&
-                            (profile.manualExcludedInstrumentIds || []).length >= Math.max(plan.allocations.length - 1, 0)
-                          }
-                        />
-                        <span>{excluded ? `Removed: ${allocation.ticker}` : `Keep ${allocation.ticker}`}</span>
-                      </label>
-                    </li>
+                    <label key={`remove-${allocation.instrumentId}`} className="check-pill">
+                      <input
+                        type="checkbox"
+                        checked={excluded}
+                        onChange={() => toggleManualExclusion(allocation.instrumentId)}
+                        disabled={
+                          !excluded &&
+                          (profile.manualExcludedInstrumentIds || []).length >= Math.max(plan.allocations.length - 1, 0)
+                        }
+                      />
+                      <span>{excluded ? `Removed: ${allocation.ticker}` : `Keep ${allocation.ticker}`}</span>
+                    </label>
                   );
                 })}
-              </ul>
+              </div>
               <p className="caption">
                 Remove any investment options the client does not want. At least one recommendation must remain.
               </p>
