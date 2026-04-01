@@ -7,12 +7,13 @@ import { PortfolioPlan } from "@/lib/types";
 export async function POST(request: Request) {
   try {
     const { plan } = (await request.json()) as { plan: PortfolioPlan };
+    const holdings = await estimateHoldingsFromPlan(plan);
     const finalized = await captureDailySnapshot({
       portfolioId: plan.id,
       portfolioName: plan.portfolioName,
       finalizedAt: new Date().toISOString(),
       client: plan.client,
-      holdings: estimateHoldingsFromPlan(plan),
+      holdings,
       snapshots: [],
       notes: [
         `${new Date().toISOString()}: Portfolio finalized for tracking. This system tracks performance only and does not place trades.`

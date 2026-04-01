@@ -361,7 +361,7 @@ async function safeInstrumentSnapshot(instrument: Instrument) {
       instrumentId: instrument.id,
       ticker: instrument.ticker,
       name: instrument.name,
-      currentPrice: 100,
+      currentPrice: 0,
       returns: {
         "1M": null,
         "6M": null,
@@ -546,7 +546,7 @@ function applyNotesPreference(client: ClientProfile, weights: Record<string, num
   }
 
   const adjusted = { ...weights };
-  const stockIds = getSelectedStockIds(client);
+  const stockIds = getRankedCandidateStocks(client).map((instrument) => instrument.id);
   const fundIds = INSTRUMENT_UNIVERSE.filter((instrument) => instrument.type !== "stock").map(
     (instrument) => instrument.id
   );
@@ -915,13 +915,33 @@ export async function generatePortfolioPlan(client: ClientProfile): Promise<Port
   };
 }
 
-export function estimateHoldingsFromPlan(plan: PortfolioPlan) {
-  return plan.allocations.map((allocation) => ({
-    instrumentId: allocation.instrumentId,
-    ticker: allocation.ticker,
-    quantity: Number((allocation.amount / Math.max(allocation.snapshot.currentPrice, 1)).toFixed(4)),
-    costBasis: allocation.snapshot.currentPrice
-  }));
+export async function estimateHoldingsFromPlan(plan: PortfolioPlan) {
+  return Promise.all(
+    plan.allocations.map(async (allocation) => {
+      let currentPrice = allocation.snapshot.currentPrice;
+
+      if (allocation.snapshot.source === "Fallback snapshot" || currentPrice <= 0) {
+        const instrument = getInstrumentById(allocation.instrumentId);
+        if (!instrument) {
+          throw new Error(`Unable to finalize ${allocation.ticker}: instrument metadata is unavailable.`);
+        }
+
+        const refreshedSnapshot = await getInstrumentSnapshot(instrument);
+        currentPrice = refreshedSnapshot.currentPrice;
+      }
+
+      if (!currentPrice || currentPrice <= 0) {
+        throw new Error(`Unable to finalize ${allocation.ticker}: live market pricing is unavailable right now.`);
+      }
+
+      return {
+        instrumentId: allocation.instrumentId,
+        ticker: allocation.ticker,
+        quantity: Number((allocation.amount / currentPrice).toFixed(4)),
+        costBasis: currentPrice
+      };
+    })
+  );
 }
 
 export function getUniverseSummary() {
