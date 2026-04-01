@@ -1,18 +1,27 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireApiSession } from "@/lib/auth";
 import { captureDailySnapshot } from "@/lib/monitor";
-import { estimateHoldingsFromPlan } from "@/lib/portfolio-engine";
+import { estimateHoldingsFromPlan, generatePortfolioPlan } from "@/lib/portfolio-engine";
 import { upsertFinalizedPortfolio } from "@/lib/storage";
 import { PortfolioPlan } from "@/lib/types";
+import { parseClientProfile } from "@/lib/validation";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const unauthorized = await requireApiSession(request);
+    if (unauthorized) {
+      return unauthorized;
+    }
+
     const { plan } = (await request.json()) as { plan: PortfolioPlan };
-    const holdings = await estimateHoldingsFromPlan(plan);
+    const serverClient = parseClientProfile(plan?.client);
+    const serverPlan = await generatePortfolioPlan(serverClient);
+    const holdings = await estimateHoldingsFromPlan(serverPlan);
     const finalized = await captureDailySnapshot({
-      portfolioId: plan.id,
-      portfolioName: plan.portfolioName,
+      portfolioId: serverPlan.id,
+      portfolioName: serverPlan.portfolioName,
       finalizedAt: new Date().toISOString(),
-      client: plan.client,
+      client: serverPlan.client,
       holdings,
       snapshots: [],
       notes: [

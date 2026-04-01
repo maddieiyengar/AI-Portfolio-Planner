@@ -1,10 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireApiSession } from "@/lib/auth";
 import { generatePortfolioPlan, getUniverseSummary } from "@/lib/portfolio-engine";
-import { ClientProfile } from "@/lib/types";
+import { parseClientProfile } from "@/lib/validation";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const client = (await request.json()) as ClientProfile;
+    const unauthorized = await requireApiSession(request);
+    if (unauthorized) {
+      return unauthorized;
+    }
+
+    const client = parseClientProfile(await request.json());
     const plan = await generatePortfolioPlan(client);
     return NextResponse.json({ plan, universe: getUniverseSummary() });
   } catch (error) {

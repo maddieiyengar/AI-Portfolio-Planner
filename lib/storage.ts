@@ -4,6 +4,7 @@ import { FinalizedPortfolio } from "@/lib/types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const PORTFOLIOS_FILE = path.join(DATA_DIR, "portfolios.json");
+let writeQueue = Promise.resolve();
 
 async function ensureStorage() {
   await fs.mkdir(DATA_DIR, { recursive: true });
@@ -21,8 +22,14 @@ export async function readFinalizedPortfolios() {
 }
 
 export async function writeFinalizedPortfolios(portfolios: FinalizedPortfolio[]) {
-  await ensureStorage();
-  await fs.writeFile(PORTFOLIOS_FILE, JSON.stringify(portfolios, null, 2), "utf8");
+  writeQueue = writeQueue.then(async () => {
+    await ensureStorage();
+    const tempFile = `${PORTFOLIOS_FILE}.tmp`;
+    await fs.writeFile(tempFile, JSON.stringify(portfolios, null, 2), "utf8");
+    await fs.rename(tempFile, PORTFOLIOS_FILE);
+  });
+
+  await writeQueue;
 }
 
 export async function upsertFinalizedPortfolio(portfolio: FinalizedPortfolio) {

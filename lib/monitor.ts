@@ -26,7 +26,7 @@ export async function captureDailySnapshot(portfolio: FinalizedPortfolio) {
         ticker: holding.ticker,
         marketValue: Number((holding.quantity * snapshot.currentPrice).toFixed(2)),
         price: snapshot.currentPrice,
-        dailyChangePct: snapshot.returns["1M"]
+        dailyChangePct: snapshot.dailyChangePct ?? null
       };
     })
   );
@@ -80,7 +80,7 @@ export async function applyTradeIntent(portfolio: FinalizedPortfolio, trade: Tra
     }
     holding.quantity = Number((holding.quantity - trade.quantity).toFixed(4));
     if (holding.quantity === 0) {
-      portfolio.holdings = portfolio.holdings.filter((item) => item.instrumentId !== trade.instrumentId);
+      portfolio.holdings = portfolio.holdings.filter((item) => item.instrumentId !== instrument.id);
     }
   }
 

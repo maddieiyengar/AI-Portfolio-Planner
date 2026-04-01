@@ -1,10 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireApiSession } from "@/lib/auth";
 import { applyTradeIntent, captureDailySnapshot } from "@/lib/monitor";
 import { getFinalizedPortfolioById, readFinalizedPortfolios, upsertFinalizedPortfolio } from "@/lib/storage";
-import { TradeIntent } from "@/lib/types";
+import { parseTradeIntent } from "@/lib/validation";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const unauthorized = await requireApiSession(request);
+    if (unauthorized) {
+      return unauthorized;
+    }
+
     const portfolios = await readFinalizedPortfolios();
     const updated = await Promise.all(
       portfolios.map(async (portfolio) => {
@@ -23,9 +29,21 @@ export async function GET() {
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { portfolioId, trade } = (await request.json()) as { portfolioId: string; trade: TradeIntent };
+    const unauthorized = await requireApiSession(request);
+    if (unauthorized) {
+      return unauthorized;
+    }
+
+    const payload = (await request.json()) as { portfolioId?: string; trade?: unknown };
+    const portfolioId = typeof payload.portfolioId === "string" ? payload.portfolioId.trim() : "";
+    const trade = parseTradeIntent(payload.trade);
+
+    if (!portfolioId) {
+      return NextResponse.json({ error: "portfolioId is required." }, { status: 400 });
+    }
+
     const portfolio = await getFinalizedPortfolioById(portfolioId);
 
     if (!portfolio) {
@@ -43,12 +61,21 @@ export async function POST(request: Request) {
   }
 }
 
-export async function PUT(request: Request) {
+export async function PUT(request: NextRequest) {
   try {
-    const { portfolioId, portfolioName } = (await request.json()) as {
-      portfolioId: string;
-      portfolioName: string;
-    };
+    const unauthorized = await requireApiSession(request);
+    if (unauthorized) {
+      return unauthorized;
+    }
+
+    const payload = (await request.json()) as { portfolioId?: string; portfolioName?: string };
+    const portfolioId = typeof payload.portfolioId === "string" ? payload.portfolioId.trim() : "";
+    const portfolioName = typeof payload.portfolioName === "string" ? payload.portfolioName : "";
+
+    if (!portfolioId) {
+      return NextResponse.json({ error: "portfolioId is required." }, { status: 400 });
+    }
+
     const portfolio = await getFinalizedPortfolioById(portfolioId);
 
     if (!portfolio) {

@@ -1,9 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { requireApiSession } from "@/lib/auth";
 import { buildChartsForFinalizedPortfolio, buildChartsForPlan } from "@/lib/charting";
 import { FinalizedPortfolio, PortfolioPlan } from "@/lib/types";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
+    const unauthorized = await requireApiSession(request);
+    if (unauthorized) {
+      return unauthorized;
+    }
+
     const { plan, trackedPortfolio } = (await request.json()) as {
       plan?: PortfolioPlan;
       trackedPortfolio?: FinalizedPortfolio;

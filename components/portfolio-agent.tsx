@@ -502,8 +502,22 @@ export function PortfolioAgent() {
     window.location.href = `/api/portfolio/export?${searchParams.toString()}`;
   }
 
+  async function signOut() {
+    const form = document.createElement("form");
+    form.method = "POST";
+    form.action = "/api/auth/logout";
+    document.body.appendChild(form);
+    form.submit();
+  }
+
   return (
     <main className="shell">
+      <div className="topbar">
+        <p className="caption">Protected dashboard for portfolio generation, monitoring, and exports.</p>
+        <button type="button" className="secondary" onClick={() => void signOut()}>
+          Sign out
+        </button>
+      </div>
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">AI Portfolio Planning Desk</p>

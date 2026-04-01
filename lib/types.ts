@@ -73,6 +73,7 @@ export type InstrumentSnapshot = {
   ticker: string;
   name: string;
   currentPrice: number;
+  dailyChangePct?: number | null;
   returns: Record<ReturnWindow, number | null>;
   sentimentScore: number;
   sentimentLabel: "positive" | "neutral" | "negative";

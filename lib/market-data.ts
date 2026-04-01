@@ -163,6 +163,7 @@ function buildCashSnapshot(instrument: Instrument): InstrumentSnapshot {
     ticker: instrument.ticker,
     name: instrument.name,
     currentPrice: 1,
+    dailyChangePct: null,
     returns: {
       "1M": round(annualizedYieldReturn(annualYield, 1)),
       "6M": round(annualizedYieldReturn(annualYield, 6)),
@@ -205,6 +206,10 @@ export async function getInstrumentSnapshot(instrument: Instrument): Promise<Ins
     ticker: instrument.ticker,
     name: instrument.name,
     currentPrice: round(history.currentPrice),
+    dailyChangePct:
+      history.previousClose && history.previousClose > 0
+        ? round(((history.currentPrice - history.previousClose) / history.previousClose) * 100)
+        : null,
     returns,
     sentimentScore: 0,
     sentimentLabel: "neutral",
