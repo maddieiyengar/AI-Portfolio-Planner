@@ -54,6 +54,7 @@ const initialProfile: ClientProfile = {
   },
   preferredStockSectors: ["Healthcare & Social Assistance", "Finance & Insurance"],
   wantsManualPortfolioChanges: false,
+  manualExcludedInstrumentIds: [],
   manualReplacementTarget: "",
   manualReplacementTicker: "",
   notes: "Prefers stable returns and wants a liquid emergency reserve."
@@ -258,6 +259,21 @@ export function PortfolioAgent() {
         ? currentMarketCaps.filter((item) => item !== marketCap)
         : [...currentMarketCaps, marketCap]
     );
+  }
+
+  function toggleManualExclusion(instrumentId: string) {
+    const excludedIds = profile.manualExcludedInstrumentIds || [];
+    updateProfile(
+      "manualExcludedInstrumentIds",
+      excludedIds.includes(instrumentId)
+        ? excludedIds.filter((item) => item !== instrumentId)
+        : [...excludedIds, instrumentId]
+    );
+
+    if (profile.manualReplacementTarget === instrumentId) {
+      updateProfile("manualReplacementTarget", "");
+      updateProfile("manualReplacementTicker", "");
+    }
   }
 
   function updateScenario<K extends keyof NonNullable<ClientProfile["scenarios"]>>(
@@ -1189,8 +1205,8 @@ export function PortfolioAgent() {
           <div className="panel override-panel">
             <h2>Manual changes</h2>
             <p className="caption">
-              Ask the client whether they want to replace any recommended instrument. If they know the
-              exact ticker, enter it below. Otherwise, review the suggestions and pick one to try.
+              Ask the client whether they want to replace or remove any recommended instrument. If they know the
+              exact ticker, enter it below. Otherwise, review the suggestions and trim the portfolio before regenerating.
             </p>
             <div className="form-grid compact-grid">
               <label className="toggle">
@@ -1211,11 +1227,15 @@ export function PortfolioAgent() {
                   disabled={!profile.wantsManualPortfolioChanges}
                 >
                   <option value="">Choose a current position</option>
-                  {plan.allocations.map((allocation) => (
+                  {plan.allocations
+                    .filter(
+                      (allocation) => !(profile.manualExcludedInstrumentIds || []).includes(allocation.instrumentId)
+                    )
+                    .map((allocation) => (
                     <option key={allocation.instrumentId} value={allocation.instrumentId}>
                       {allocation.ticker} - {allocation.name}
                     </option>
-                  ))}
+                    ))}
                 </select>
               </label>
               <label>
@@ -1227,6 +1247,33 @@ export function PortfolioAgent() {
                   disabled={!profile.wantsManualPortfolioChanges}
                 />
               </label>
+            </div>
+            <div className="suggestion-box">
+              <strong>Remove positions</strong>
+              <ul className="suggestion-list">
+                {plan.allocations.map((allocation) => {
+                  const excluded = (profile.manualExcludedInstrumentIds || []).includes(allocation.instrumentId);
+                  return (
+                    <li key={`remove-${allocation.instrumentId}`}>
+                      <label className="check-pill">
+                        <input
+                          type="checkbox"
+                          checked={excluded}
+                          onChange={() => toggleManualExclusion(allocation.instrumentId)}
+                          disabled={
+                            !excluded &&
+                            (profile.manualExcludedInstrumentIds || []).length >= Math.max(plan.allocations.length - 1, 0)
+                          }
+                        />
+                        <span>{excluded ? `Removed: ${allocation.ticker}` : `Keep ${allocation.ticker}`}</span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="caption">
+                Remove any investment options the client does not want. At least one recommendation must remain.
+              </p>
             </div>
             <button
               className="secondary"

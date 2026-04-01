@@ -380,6 +380,34 @@ async function safeInstrumentSnapshot(instrument: Instrument) {
   }
 }
 
+function applyManualExclusions(
+  client: ClientProfile,
+  weights: Record<string, number>,
+  selectedInstruments: Instrument[]
+) {
+  const excludedIds = new Set(client.manualExcludedInstrumentIds || []);
+  if (!client.wantsManualPortfolioChanges || excludedIds.size === 0) {
+    return selectedInstruments;
+  }
+
+  const remaining = selectedInstruments.filter((instrument) => !excludedIds.has(instrument.id));
+  if (remaining.length === 0) {
+    return selectedInstruments;
+  }
+
+  let removedWeight = 0;
+  for (const instrument of selectedInstruments) {
+    if (excludedIds.has(instrument.id)) {
+      removedWeight += weights[instrument.id] || 0;
+      weights[instrument.id] = 0;
+    }
+  }
+
+  const remainingIds = remaining.map((instrument) => instrument.id);
+  distributeWeightChange(weights, remainingIds, removedWeight, "increase");
+  return remaining;
+}
+
 function reserveWeightForAmount(amount: number | undefined, investmentAmount: number, cap = 0.85) {
   if (!amount || amount <= 0 || investmentAmount <= 0) {
     return 0;
@@ -597,6 +625,11 @@ function buildAdjustmentSuggestions(client: ClientProfile, selectedInstruments: 
   if (client.scenarios?.taxAwareTransition) {
     scenarioSuggestions.push("Tax-aware transition flag is on, so the engine softens high-growth concentration rather than forcing an abrupt shift.");
   }
+  if ((client.manualExcludedInstrumentIds || []).length > 0) {
+    scenarioSuggestions.push(
+      `Excluded from the portfolio: ${(client.manualExcludedInstrumentIds || []).length} client-rejected position(s).`
+    );
+  }
 
   if (!client.wantsManualPortfolioChanges) {
     return scenarioSuggestions;
@@ -797,7 +830,8 @@ export async function generatePortfolioPlan(client: ClientProfile): Promise<Port
   const initialInstruments = Object.keys(weights)
     .map((id) => getInstrumentById(id))
     .filter((instrument): instrument is NonNullable<typeof instrument> => Boolean(instrument));
-  const selectedInstruments = applyManualReplacement(client, weights, initialInstruments);
+  const afterExclusions = applyManualExclusions(client, weights, initialInstruments);
+  const selectedInstruments = applyManualReplacement(client, weights, afterExclusions);
 
   const enrichedAllocations = await Promise.all(
     selectedInstruments.map(async (instrument) => {

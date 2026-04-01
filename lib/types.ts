@@ -36,6 +36,7 @@ export type ClientProfile = {
   targetDate?: number;
   scenarios?: ClientScenarioInputs;
   wantsManualPortfolioChanges?: boolean;
+  manualExcludedInstrumentIds?: string[];
   manualReplacementTarget?: string;
   manualReplacementTicker?: string;
   notes?: string;
