@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireApiSession } from "@/lib/auth";
 import { captureDailySnapshot } from "@/lib/monitor";
 import { estimateHoldingsFromPlan, generatePortfolioPlan } from "@/lib/portfolio-engine";
 import { upsertFinalizedPortfolio } from "@/lib/storage";
@@ -8,11 +7,6 @@ import { parseClientProfile } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
   try {
-    const unauthorized = await requireApiSession(request);
-    if (unauthorized) {
-      return unauthorized;
-    }
-
     const { plan } = (await request.json()) as { plan: PortfolioPlan };
     const serverClient = parseClientProfile(plan?.client);
     const serverPlan = await generatePortfolioPlan(serverClient);

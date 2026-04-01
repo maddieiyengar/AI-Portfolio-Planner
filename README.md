@@ -13,13 +13,10 @@ Portfolio Agent is a Next.js application that:
 
 ```bash
 npm install
-cp .env.example .env.local
 npm run dev
 ```
 
 Then open `http://localhost:3000`.
-
-Set `PORTFOLIO_AGENT_ACCESS_PASSWORD` in `.env.local` before you open the site. The app now requires a password-protected session for the dashboard and portfolio APIs.
 
 ## Monitoring model
 
@@ -27,12 +24,6 @@ Set `PORTFOLIO_AGENT_ACCESS_PASSWORD` in `.env.local` before you open the site. 
 - `GET /api/portfolio/monitor` captures a daily snapshot for every finalized portfolio.
 - `POST /api/portfolio/monitor` records a client-directed buy or sell intent and updates tracked holdings.
 - For fully automated daily monitoring, call `GET /api/portfolio/monitor` from an external scheduler once per day.
-
-## Security notes
-
-- Set a strong `PORTFOLIO_AGENT_ACCESS_PASSWORD` everywhere you deploy this project.
-- Portfolio APIs require an authenticated session cookie.
-- Finalization regenerates the portfolio server-side from the submitted client profile instead of trusting browser-supplied allocations.
 
 ## Important compliance note
 

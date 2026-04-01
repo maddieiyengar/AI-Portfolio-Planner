@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireApiSession } from "@/lib/auth";
 import { buildChartsForFinalizedPortfolio } from "@/lib/charting";
 import { getFinalizedPortfolioById } from "@/lib/storage";
 
@@ -101,11 +100,6 @@ function buildWorkbookXml(
 
 export async function GET(request: NextRequest) {
   try {
-    const unauthorized = await requireApiSession(request);
-    if (unauthorized) {
-      return unauthorized;
-    }
-
     const { searchParams } = new URL(request.url);
     const portfolioId = searchParams.get("portfolioId") || "";
     const start = searchParams.get("start") || "";
