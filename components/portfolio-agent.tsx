@@ -4,6 +4,8 @@ import { useEffect, useState, useTransition } from "react";
 import { PerformanceChart } from "@/components/performance-chart";
 import { ClientProfile, FinalizedPortfolio, InstrumentChart, PortfolioPlan } from "@/lib/types";
 
+const MARKET_CAP_OPTIONS = ["large-cap", "mid-cap", "small-cap"] as const;
+
 const SECTOR_OPTIONS = [
   "Agriculture, Forestry, Fishing, and Hunting",
   "Manufacturing",
@@ -32,6 +34,24 @@ const initialProfile: ClientProfile = {
   liquidityNeed: "medium",
   needsIncome: true,
   goal: "capital_preservation",
+  preferredMarketCaps: ["large-cap"],
+  riskScore: 3,
+  liquidityRatio: 0.2,
+  targetDate: new Date().getFullYear() + 7,
+  scenarios: {
+    maxPrincipalLossPct: 5,
+    targetAnnualOutperformancePct: 0,
+    inflationHedgeOnly: false,
+    requiredLiquidReserve: 20000,
+    stagedWithdrawalAmount: 0,
+    stagedWithdrawalYears: 2,
+    allowFiveYearLockup: false,
+    targetMonthlyIncome: 0,
+    targetIncomeStartYear: 2030,
+    targetPortfolioValue: 0,
+    targetPortfolioYear: 2028,
+    taxAwareTransition: false
+  },
   preferredStockSectors: ["Healthcare & Social Assistance", "Finance & Insurance"],
   wantsManualPortfolioChanges: false,
   manualReplacementTarget: "",
@@ -228,6 +248,29 @@ export function PortfolioAgent() {
         ? currentSectors.filter((item) => item !== sector)
         : [...currentSectors, sector]
     );
+  }
+
+  function toggleMarketCap(marketCap: (typeof MARKET_CAP_OPTIONS)[number]) {
+    const currentMarketCaps = profile.preferredMarketCaps || [];
+    updateProfile(
+      "preferredMarketCaps",
+      currentMarketCaps.includes(marketCap)
+        ? currentMarketCaps.filter((item) => item !== marketCap)
+        : [...currentMarketCaps, marketCap]
+    );
+  }
+
+  function updateScenario<K extends keyof NonNullable<ClientProfile["scenarios"]>>(
+    key: K,
+    value: NonNullable<ClientProfile["scenarios"]>[K]
+  ) {
+    setProfile((current) => ({
+      ...current,
+      scenarios: {
+        ...(current.scenarios || {}),
+        [key]: value
+      }
+    }));
   }
 
   function applyRangePreset(label: (typeof RANGE_PRESETS)[number]["label"], days: number) {
@@ -569,6 +612,51 @@ export function PortfolioAgent() {
                 ))}
               </div>
             </div>
+            <div className="full">
+              <span className="field-label">Preferred market-cap mix</span>
+              <p className="caption">Pick multiple options. The stock picker will prioritize these company sizes.</p>
+              <div className="check-grid">
+                {MARKET_CAP_OPTIONS.map((marketCap) => (
+                  <label key={marketCap} className="check-pill">
+                    <input
+                      type="checkbox"
+                      checked={(profile.preferredMarketCaps || []).includes(marketCap)}
+                      onChange={() => toggleMarketCap(marketCap)}
+                    />
+                    <span>{marketCap}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <label>
+              <span>Risk score (1-10)</span>
+              <input
+                type="number"
+                min={1}
+                max={10}
+                value={profile.riskScore || 1}
+                onChange={(event) => updateProfile("riskScore", Number(event.target.value))}
+              />
+            </label>
+            <label>
+              <span>Liquidity ratio (0-1)</span>
+              <input
+                type="number"
+                min={0}
+                max={1}
+                step="0.05"
+                value={profile.liquidityRatio || 0}
+                onChange={(event) => updateProfile("liquidityRatio", Number(event.target.value))}
+              />
+            </label>
+            <label>
+              <span>Target date</span>
+              <input
+                type="number"
+                value={profile.targetDate || new Date().getFullYear()}
+                onChange={(event) => updateProfile("targetDate", Number(event.target.value))}
+              />
+            </label>
             <label className="toggle">
               <span>Needs income</span>
               <input
@@ -583,6 +671,118 @@ export function PortfolioAgent() {
                 type="checkbox"
                 checked={Boolean(profile.wantsManualPortfolioChanges)}
                 onChange={(event) => updateProfile("wantsManualPortfolioChanges", event.target.checked)}
+              />
+            </label>
+            <div className="full">
+              <span className="field-label">Scenario constraints</span>
+              <p className="caption">
+                Capture safety-first, aggressive growth, inflation hedge, liquidity, retirement income, tax-aware,
+                and target-outcome requests directly instead of relying only on notes.
+              </p>
+            </div>
+            <label>
+              <span>Max principal loss %</span>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={profile.scenarios?.maxPrincipalLossPct || 0}
+                onChange={(event) => updateScenario("maxPrincipalLossPct", Number(event.target.value))}
+              />
+            </label>
+            <label>
+              <span>Target outperformance %</span>
+              <input
+                type="number"
+                min={0}
+                max={25}
+                value={profile.scenarios?.targetAnnualOutperformancePct || 0}
+                onChange={(event) => updateScenario("targetAnnualOutperformancePct", Number(event.target.value))}
+              />
+            </label>
+            <label className="toggle">
+              <span>Inflation hedge scenario</span>
+              <input
+                type="checkbox"
+                checked={Boolean(profile.scenarios?.inflationHedgeOnly)}
+                onChange={(event) => updateScenario("inflationHedgeOnly", event.target.checked)}
+              />
+            </label>
+            <label>
+              <span>Emergency liquid reserve</span>
+              <input
+                type="number"
+                min={0}
+                value={profile.scenarios?.requiredLiquidReserve || 0}
+                onChange={(event) => updateScenario("requiredLiquidReserve", Number(event.target.value))}
+              />
+            </label>
+            <label>
+              <span>Staged withdrawal amount</span>
+              <input
+                type="number"
+                min={0}
+                value={profile.scenarios?.stagedWithdrawalAmount || 0}
+                onChange={(event) => updateScenario("stagedWithdrawalAmount", Number(event.target.value))}
+              />
+            </label>
+            <label>
+              <span>Withdrawal in years</span>
+              <input
+                type="number"
+                min={0}
+                value={profile.scenarios?.stagedWithdrawalYears || 0}
+                onChange={(event) => updateScenario("stagedWithdrawalYears", Number(event.target.value))}
+              />
+            </label>
+            <label className="toggle">
+              <span>Allow 5-year lock-up</span>
+              <input
+                type="checkbox"
+                checked={Boolean(profile.scenarios?.allowFiveYearLockup)}
+                onChange={(event) => updateScenario("allowFiveYearLockup", event.target.checked)}
+              />
+            </label>
+            <label>
+              <span>Target monthly income</span>
+              <input
+                type="number"
+                min={0}
+                value={profile.scenarios?.targetMonthlyIncome || 0}
+                onChange={(event) => updateScenario("targetMonthlyIncome", Number(event.target.value))}
+              />
+            </label>
+            <label>
+              <span>Income start year</span>
+              <input
+                type="number"
+                value={profile.scenarios?.targetIncomeStartYear || new Date().getFullYear()}
+                onChange={(event) => updateScenario("targetIncomeStartYear", Number(event.target.value))}
+              />
+            </label>
+            <label>
+              <span>Target portfolio value</span>
+              <input
+                type="number"
+                min={0}
+                value={profile.scenarios?.targetPortfolioValue || 0}
+                onChange={(event) => updateScenario("targetPortfolioValue", Number(event.target.value))}
+              />
+            </label>
+            <label>
+              <span>Target value year</span>
+              <input
+                type="number"
+                value={profile.scenarios?.targetPortfolioYear || new Date().getFullYear()}
+                onChange={(event) => updateScenario("targetPortfolioYear", Number(event.target.value))}
+              />
+            </label>
+            <label className="toggle">
+              <span>Tax-aware transition</span>
+              <input
+                type="checkbox"
+                checked={Boolean(profile.scenarios?.taxAwareTransition)}
+                onChange={(event) => updateScenario("taxAwareTransition", event.target.checked)}
               />
             </label>
             <label className="full">
