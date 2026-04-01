@@ -1,6 +1,22 @@
 export type RiskLevel = "low" | "medium" | "high";
 export type GoalType = "capital_preservation" | "income" | "balanced_growth" | "aggressive_growth";
 export type LiquidityNeed = "low" | "medium" | "high";
+export type MarketCapPreference = "large-cap" | "mid-cap" | "small-cap";
+
+export type ClientScenarioInputs = {
+  maxPrincipalLossPct?: number;
+  targetAnnualOutperformancePct?: number;
+  inflationHedgeOnly?: boolean;
+  requiredLiquidReserve?: number;
+  stagedWithdrawalAmount?: number;
+  stagedWithdrawalYears?: number;
+  allowFiveYearLockup?: boolean;
+  targetMonthlyIncome?: number;
+  targetIncomeStartYear?: number;
+  targetPortfolioValue?: number;
+  targetPortfolioYear?: number;
+  taxAwareTransition?: boolean;
+};
 
 export type ClientProfile = {
   name: string;
@@ -14,6 +30,11 @@ export type ClientProfile = {
   needsIncome: boolean;
   goal: GoalType;
   preferredStockSectors?: string[];
+  preferredMarketCaps?: MarketCapPreference[];
+  riskScore?: number;
+  liquidityRatio?: number;
+  targetDate?: number;
+  scenarios?: ClientScenarioInputs;
   wantsManualPortfolioChanges?: boolean;
   manualReplacementTarget?: string;
   manualReplacementTicker?: string;

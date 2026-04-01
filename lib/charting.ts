@@ -37,17 +37,22 @@ export async function buildChartsForPlan(plan: PortfolioPlan) {
         (allocation.snapshot.returns["1Y"] || 0) * 0.65 +
         (allocation.snapshot.returns["5Y"] || 0) * 0.25 +
         allocation.snapshot.sentimentScore * 10;
-      return getInstrumentChart(instrument, annualReturnEstimate);
+      try {
+        return await getInstrumentChart(instrument, annualReturnEstimate);
+      } catch {
+        return null;
+      }
     })
   );
 
-  const portfolioDates = uniqueSortedDates(charts);
+  const validCharts = charts.filter((chart): chart is InstrumentChart => Boolean(chart));
+  const portfolioDates = uniqueSortedDates(validCharts);
   const portfolioChart: ChartPoint[] = portfolioDates.map((date) => {
     let total = 0;
     let forecastWeight = 0;
 
     for (const allocation of plan.allocations) {
-      const chart = charts.find((item) => item.instrumentId === allocation.instrumentId);
+      const chart = validCharts.find((item) => item.instrumentId === allocation.instrumentId);
       if (!chart) {
         continue;
       }
@@ -67,7 +72,7 @@ export async function buildChartsForPlan(plan: PortfolioPlan) {
   });
 
   return {
-    instruments: charts,
+    instruments: validCharts,
     portfolio: portfolioChart
   };
 }
@@ -81,11 +86,15 @@ export async function buildChartsForFinalizedPortfolio(portfolio: FinalizedPortf
         return null;
       }
 
-      const snapshot = await getInstrumentSnapshot(instrument);
-      const annualReturnEstimate =
-        (snapshot.returns["1Y"] || 0) * 0.65 + (snapshot.returns["5Y"] || 0) * 0.25 + snapshot.sentimentScore * 10;
+      try {
+        const snapshot = await getInstrumentSnapshot(instrument);
+        const annualReturnEstimate =
+          (snapshot.returns["1Y"] || 0) * 0.65 + (snapshot.returns["5Y"] || 0) * 0.25 + snapshot.sentimentScore * 10;
 
-      return getInstrumentChart(instrument, annualReturnEstimate);
+        return await getInstrumentChart(instrument, annualReturnEstimate);
+      } catch {
+        return null;
+      }
     })
   );
 
