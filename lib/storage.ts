@@ -20,7 +20,7 @@ async function readBlobPortfolios() {
     return [];
   }
 
-  const response = await fetch(blob.url, { cache: "no-store" });
+  const response = await fetch(blob.downloadUrl || blob.url, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`Unable to read portfolio storage blob: ${response.status}`);
   }
