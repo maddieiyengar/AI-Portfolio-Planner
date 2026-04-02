@@ -30,7 +30,7 @@ async function readBlobPortfolios() {
 
 async function writeBlobPortfolios(portfolios: FinalizedPortfolio[]) {
   await put(BLOB_PATHNAME, JSON.stringify(portfolios, null, 2), {
-    access: "public",
+    access: "private",
     allowOverwrite: true,
     contentType: "application/json",
     addRandomSuffix: false
