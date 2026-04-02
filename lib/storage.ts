@@ -1,6 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
-import { list, put } from "@vercel/blob";
+import { get, put } from "@vercel/blob";
 import { FinalizedPortfolio } from "@/lib/types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
@@ -13,18 +13,16 @@ function useBlobStorage() {
 }
 
 async function readBlobPortfolios() {
-  const result = await list({ prefix: BLOB_PATHNAME, limit: 1 });
-  const blob = result.blobs.find((item) => item.pathname === BLOB_PATHNAME) || result.blobs[0];
+  const blob = await get(BLOB_PATHNAME, {
+    access: "private",
+    token: process.env.BLOB_READ_WRITE_TOKEN
+  });
 
   if (!blob) {
     return [];
   }
 
-  const response = await fetch(blob.downloadUrl || blob.url, { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`Unable to read portfolio storage blob: ${response.status}`);
-  }
-
+  const response = new Response(blob.stream);
   return (await response.json()) as FinalizedPortfolio[];
 }
 
