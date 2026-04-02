@@ -1,10 +1,41 @@
 import { promises as fs } from "fs";
 import path from "path";
+import { list, put } from "@vercel/blob";
 import { FinalizedPortfolio } from "@/lib/types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const PORTFOLIOS_FILE = path.join(DATA_DIR, "portfolios.json");
+const BLOB_PATHNAME = "state/portfolios.json";
 let writeQueue = Promise.resolve();
+
+function useBlobStorage() {
+  return Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+}
+
+async function readBlobPortfolios() {
+  const result = await list({ prefix: BLOB_PATHNAME, limit: 1 });
+  const blob = result.blobs.find((item) => item.pathname === BLOB_PATHNAME) || result.blobs[0];
+
+  if (!blob) {
+    return [];
+  }
+
+  const response = await fetch(blob.url, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`Unable to read portfolio storage blob: ${response.status}`);
+  }
+
+  return (await response.json()) as FinalizedPortfolio[];
+}
+
+async function writeBlobPortfolios(portfolios: FinalizedPortfolio[]) {
+  await put(BLOB_PATHNAME, JSON.stringify(portfolios, null, 2), {
+    access: "public",
+    allowOverwrite: true,
+    contentType: "application/json",
+    addRandomSuffix: false
+  });
+}
 
 async function ensureStorage() {
   await fs.mkdir(DATA_DIR, { recursive: true });
@@ -16,12 +47,21 @@ async function ensureStorage() {
 }
 
 export async function readFinalizedPortfolios() {
+  if (useBlobStorage()) {
+    return readBlobPortfolios();
+  }
+
   await ensureStorage();
   const content = await fs.readFile(PORTFOLIOS_FILE, "utf8");
   return JSON.parse(content) as FinalizedPortfolio[];
 }
 
 export async function writeFinalizedPortfolios(portfolios: FinalizedPortfolio[]) {
+  if (useBlobStorage()) {
+    await writeBlobPortfolios(portfolios);
+    return;
+  }
+
   writeQueue = writeQueue.then(async () => {
     await ensureStorage();
     const tempFile = `${PORTFOLIOS_FILE}.tmp`;
