@@ -532,6 +532,13 @@ export function PortfolioAgent() {
       <section className="grid">
         <div className="panel">
           <h2>Client profile</h2>
+          <div className="helper-box">
+            <p className="caption">
+              These inputs are preference settings, not guarantees. Risk fields describe how much short-term volatility
+              and downside the client can tolerate. Liquidity fields describe how soon the client may need access to cash
+              and how much of the portfolio should stay in liquid, low-volatility holdings.
+            </p>
+          </div>
           <div className="form-grid">
             <label>
               <span>Name</span>
@@ -562,6 +569,10 @@ export function PortfolioAgent() {
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
               </select>
+              <p className="field-help">
+                Low favors capital preservation, medium balances stability and growth, and high accepts larger swings for
+                more upside potential.
+              </p>
             </label>
             <label>
               <span>Goal</span>
@@ -611,6 +622,10 @@ export function PortfolioAgent() {
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
               </select>
+              <p className="field-help">
+                Use high when funds may be needed soon, medium for moderate access needs, and low when the client can
+                stay invested for longer periods.
+              </p>
             </label>
             <div className="full">
               <span className="field-label">Preferred stock industries or sectors</span>
@@ -653,6 +668,10 @@ export function PortfolioAgent() {
                 value={profile.riskScore || 1}
                 onChange={(event) => updateProfile("riskScore", Number(event.target.value))}
               />
+              <p className="field-help">
+                A finer-grained volatility tolerance score. Lower values push the model toward more defensive allocations;
+                higher values allow more equity and growth exposure.
+              </p>
             </label>
             <label>
               <span>Liquidity ratio (0-1)</span>
@@ -664,6 +683,10 @@ export function PortfolioAgent() {
                 value={profile.liquidityRatio || 0}
                 onChange={(event) => updateProfile("liquidityRatio", Number(event.target.value))}
               />
+              <p className="field-help">
+                The share of the portfolio that should remain readily accessible in cash or low-volatility instruments.
+                Example: 0.20 means about 20% should stay liquid.
+              </p>
             </label>
             <label>
               <span>Target date</span>
@@ -680,6 +703,10 @@ export function PortfolioAgent() {
                 checked={profile.needsIncome}
                 onChange={(event) => updateProfile("needsIncome", event.target.checked)}
               />
+              <p className="field-help">
+                Turn this on when the client wants the portfolio to emphasize income-producing holdings such as bonds,
+                cash-like assets, REITs, or dividend-oriented stocks.
+              </p>
             </label>
             <label className="toggle">
               <span>Modify portfolio manually</span>
