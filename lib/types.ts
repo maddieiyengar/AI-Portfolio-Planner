@@ -2,6 +2,7 @@ export type RiskLevel = "low" | "medium" | "high";
 export type GoalType = "capital_preservation" | "income" | "balanced_growth" | "aggressive_growth";
 export type LiquidityNeed = "low" | "medium" | "high";
 export type MarketCapPreference = "large-cap" | "mid-cap" | "small-cap";
+export type ConstructionLayerMode = "rule_based" | "black_litterman";
 
 export type ClientScenarioInputs = {
   maxPrincipalLossPct?: number;
@@ -23,6 +24,7 @@ export type ClientProfile = {
   portfolioName?: string;
   age: number;
   riskLevel: RiskLevel;
+  constructionLayerMode?: ConstructionLayerMode;
   investmentAmount: number;
   timeHorizonYears: number;
   monthlyContribution: number;
@@ -113,6 +115,8 @@ export type PortfolioPlan = {
   createdAt: string;
   client: ClientProfile;
   summary: string;
+  constructionMethod: string;
+  constructionHighlights: string[];
   riskExplanation: string;
   complianceNote: string;
   estimatedAnnualIncome: number;

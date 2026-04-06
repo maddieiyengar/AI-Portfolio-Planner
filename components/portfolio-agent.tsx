@@ -28,6 +28,7 @@ const initialProfile: ClientProfile = {
   portfolioName: "Taylor Income Shield",
   age: 38,
   riskLevel: "low",
+  constructionLayerMode: "black_litterman",
   investmentAmount: 150000,
   timeHorizonYears: 7,
   monthlyContribution: 1500,
@@ -507,12 +508,12 @@ export function PortfolioAgent() {
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">AI Portfolio Planning Desk</p>
-          <h1>Design a risk-aware client portfolio, then track it every day.</h1>
+          <h1>Design a risk-aware client portfolio, then review it over time.</h1>
           <p className="lede">
             This agent recommends allocations across Treasuries, bonds, cash, diversified market ETFs,
-            and selected individual stocks, shows live prices with trailing returns, estimates forward
-            scenarios from past performance and news sentiment, and keeps a daily watchlist after the
-            client finalizes a plan.
+            and selected individual stocks, combines live prices with trailing historical return windows,
+            estimates forward scenarios from historical performance and news sentiment, and keeps a dated
+            review log after the client finalizes a plan.
           </p>
         </div>
         <div className="hero-card">
@@ -587,6 +588,25 @@ export function PortfolioAgent() {
               </select>
             </label>
             <label>
+              <span>Construction mode</span>
+              <select
+                value={profile.constructionLayerMode || "black_litterman"}
+                onChange={(event) =>
+                  updateProfile(
+                    "constructionLayerMode",
+                    event.target.value as NonNullable<ClientProfile["constructionLayerMode"]>
+                  )
+                }
+              >
+                <option value="black_litterman">Base portfolio + Black-Litterman overlay</option>
+                <option value="rule_based">Base portfolio only</option>
+              </select>
+              <p className="field-help">
+                The base portfolio always comes from client suitability rules. Black-Litterman adds a second layer
+                that gently rebalances weights using diversification, return trends, and signal confidence.
+              </p>
+            </label>
+            <label>
               <span>Investment amount</span>
               <input
                 type="number"
@@ -644,8 +664,11 @@ export function PortfolioAgent() {
               </div>
             </div>
             <div className="full">
-              <span className="field-label">Preferred market-cap mix</span>
-              <p className="caption">Pick multiple options. The stock picker will prioritize these company sizes.</p>
+              <span className="field-label">Preferred company size mix (market cap)</span>
+              <p className="caption">
+                Pick multiple options. Large-cap means bigger, more established companies. Mid-cap means medium-sized
+                companies. Small-cap means smaller companies that can grow faster, but often swing more.
+              </p>
               <div className="check-grid">
                 {MARKET_CAP_OPTIONS.map((marketCap) => (
                   <label key={marketCap} className="check-pill">
@@ -660,7 +683,7 @@ export function PortfolioAgent() {
               </div>
             </div>
             <label>
-              <span>Risk score (1-10)</span>
+              <span>Comfort with market ups and downs (risk score 1-10)</span>
               <input
                 type="number"
                 min={1}
@@ -669,12 +692,12 @@ export function PortfolioAgent() {
                 onChange={(event) => updateProfile("riskScore", Number(event.target.value))}
               />
               <p className="field-help">
-                A finer-grained volatility tolerance score. Lower values push the model toward more defensive allocations;
-                higher values allow more equity and growth exposure.
+                Think of this as a comfort slider. Lower values mean "keep things steadier." Higher values mean "I can
+                handle bigger swings for more growth potential."
               </p>
             </label>
             <label>
-              <span>Liquidity ratio (0-1)</span>
+              <span>Cash-access target (liquidity ratio 0-1)</span>
               <input
                 type="number"
                 min={0}
@@ -684,37 +707,45 @@ export function PortfolioAgent() {
                 onChange={(event) => updateProfile("liquidityRatio", Number(event.target.value))}
               />
               <p className="field-help">
-                The share of the portfolio that should remain readily accessible in cash or low-volatility instruments.
-                Example: 0.20 means about 20% should stay liquid.
+                This tells the app how much should stay easier to access. Example: `0.20` means keep about 20% in
+                cash-like or steadier holdings.
               </p>
             </label>
             <label>
-              <span>Target date</span>
+              <span>When the money may be needed (target date)</span>
               <input
                 type="number"
                 value={profile.targetDate || new Date().getFullYear()}
                 onChange={(event) => updateProfile("targetDate", Number(event.target.value))}
               />
+              <p className="field-help">
+                If the client expects to use the money sooner, the plan leans more conservative. If the date is far
+                away, the plan can take a little more long-term risk.
+              </p>
             </label>
             <label className="toggle">
-              <span>Needs income</span>
+              <span>Need regular income from this portfolio</span>
               <input
                 type="checkbox"
                 checked={profile.needsIncome}
                 onChange={(event) => updateProfile("needsIncome", event.target.checked)}
               />
               <p className="field-help">
-                Turn this on when the client wants the portfolio to emphasize income-producing holdings such as bonds,
-                cash-like assets, REITs, or dividend-oriented stocks.
+                Turn this on when the client wants the portfolio to produce more ongoing cash flow from holdings such
+                as bonds, Treasury funds, REITs, or dividend-paying stocks.
               </p>
             </label>
             <label className="toggle">
-              <span>Modify portfolio manually</span>
+              <span>Hand-pick changes yourself</span>
               <input
                 type="checkbox"
                 checked={Boolean(profile.wantsManualPortfolioChanges)}
                 onChange={(event) => updateProfile("wantsManualPortfolioChanges", event.target.checked)}
               />
+              <p className="field-help">
+                Use this when the client wants to remove a suggested holding or swap one investment for another before
+                regenerating the plan.
+              </p>
             </label>
             <div className="full">
               <span className="field-label">Scenario constraints</span>
@@ -855,8 +886,8 @@ export function PortfolioAgent() {
         <div className="panel">
           <h2>Tracked portfolios</h2>
           <p className="caption">
-            Every refresh captures today&apos;s snapshot if one does not exist yet. Connect the
-            monitoring endpoint to a daily cron for hands-off tracking.
+            Each refresh captures a dated snapshot if one does not exist yet. Use the monitoring endpoint
+            on whatever review cadence fits the client, such as monthly, quarterly, or another periodic check-in.
           </p>
           <div className="tracker-list">
             {trackedPortfolios.length === 0 ? (
@@ -1145,7 +1176,7 @@ export function PortfolioAgent() {
               }
               disabled={pending}
             >
-              Finalize and start daily tracking
+              Finalize and start portfolio review log
             </button>
           </div>
 
@@ -1162,13 +1193,33 @@ export function PortfolioAgent() {
               <span>Weighted expense ratio</span>
               <strong>{plan.weightedExpenseRatio.toFixed(2)}%</strong>
             </article>
+            <article className="summary-card">
+              <span>Construction mode</span>
+              <strong>
+                {plan.client.constructionLayerMode === "rule_based"
+                  ? "Base portfolio only"
+                  : "Black-Litterman overlay"}
+              </strong>
+            </article>
           </div>
 
           <div className="narrative">
             <p>{plan.summary}</p>
+            <p>{plan.constructionMethod}</p>
             <p>{plan.riskExplanation}</p>
             <p>{plan.complianceNote}</p>
           </div>
+
+          {plan.constructionHighlights.length > 0 ? (
+            <div className="suggestion-box">
+              <strong>How the weighting works</strong>
+              <ul className="suggestion-list">
+                {plan.constructionHighlights.map((highlight) => (
+                  <li key={highlight}>{highlight}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
 
           {chartData ? (
             <div className="chart-section">

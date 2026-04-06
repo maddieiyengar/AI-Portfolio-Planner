@@ -1,9 +1,18 @@
-import { ClientProfile, ClientScenarioInputs, LiquidityNeed, MarketCapPreference, RiskLevel, TradeIntent } from "@/lib/types";
+import {
+  ClientProfile,
+  ClientScenarioInputs,
+  ConstructionLayerMode,
+  LiquidityNeed,
+  MarketCapPreference,
+  RiskLevel,
+  TradeIntent
+} from "@/lib/types";
 
 const RISK_LEVELS: RiskLevel[] = ["low", "medium", "high"];
 const LIQUIDITY_LEVELS: LiquidityNeed[] = ["low", "medium", "high"];
 const GOALS = ["capital_preservation", "income", "balanced_growth", "aggressive_growth"] as const;
 const MARKET_CAPS: MarketCapPreference[] = ["large-cap", "mid-cap", "small-cap"];
+const CONSTRUCTION_LAYER_MODES: ConstructionLayerMode[] = ["rule_based", "black_litterman"];
 
 function ensureObject(input: unknown, label: string) {
   if (!input || typeof input !== "object" || Array.isArray(input)) {
@@ -139,6 +148,10 @@ export function parseClientProfile(input: unknown): ClientProfile {
     portfolioName: readString(profile.portfolioName, "portfolioName", { required: false, max: 120 }) || undefined,
     age: readNumber(profile.age, "age", { min: 18, max: 120 }),
     riskLevel: readEnum(profile.riskLevel, "riskLevel", RISK_LEVELS),
+    constructionLayerMode:
+      profile.constructionLayerMode == null
+        ? "black_litterman"
+        : readEnum(profile.constructionLayerMode, "constructionLayerMode", CONSTRUCTION_LAYER_MODES),
     investmentAmount: readNumber(profile.investmentAmount, "investmentAmount", { min: 1 }),
     timeHorizonYears: readNumber(profile.timeHorizonYears, "timeHorizonYears", { min: 1, max: 100 }),
     monthlyContribution: readNumber(profile.monthlyContribution, "monthlyContribution", { min: 0 }),

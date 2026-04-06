@@ -1,5 +1,6 @@
 import { buildOutlook, getSentimentForInstrument } from "@/lib/sentiment";
 import { getInstrumentSnapshot } from "@/lib/market-data";
+import { optimizeWeightsWithBlackLitterman } from "@/lib/black-litterman";
 import { ClientProfile, Instrument, PortfolioPlan, RiskLevel } from "@/lib/types";
 import { createCustomInstrument, getInstrumentById, INSTRUMENT_UNIVERSE } from "@/lib/universe";
 
@@ -55,6 +56,12 @@ function normalizeWeights(weights: Record<string, number>) {
     Object.entries(weights)
       .filter(([, value]) => value > 0)
       .map(([key, value]) => [key, Number((value / total).toFixed(4))])
+  );
+}
+
+function normalizeSelectedWeights(weights: Record<string, number>, selectedInstruments: Instrument[]) {
+  return normalizeWeights(
+    Object.fromEntries(selectedInstruments.map((instrument) => [instrument.id, weights[instrument.id] || 0]))
   );
 }
 
@@ -825,6 +832,22 @@ function buildSectorSpecificityNote(client: ClientProfile, instrument: Instrumen
   return "adds diversification through asset-class exposure rather than a single-sector stock bet.";
 }
 
+function describeConstructionMethod(client: ClientProfile) {
+  if (client.constructionLayerMode === "rule_based") {
+    return {
+      methodSummary:
+        "The app uses the core rule-based portfolio engine only, so allocations come directly from the client's risk, liquidity, income, timing, and scenario inputs without the Black-Litterman balancing overlay.",
+      methodHighlights: [
+        "The starting mix is built from client suitability rules rather than a mathematical optimizer.",
+        "Scenario overlays, liquidity reserves, and manual edits still shape the final recommendation.",
+        "This mode is useful when the advisor wants a more transparent baseline before any market-informed reweighting."
+      ]
+    };
+  }
+
+  return null;
+}
+
 export async function generatePortfolioPlan(client: ClientProfile): Promise<PortfolioPlan> {
   const weights = applyProfileAdjustments(client);
   const initialInstruments = Object.keys(weights)
@@ -832,8 +855,9 @@ export async function generatePortfolioPlan(client: ClientProfile): Promise<Port
     .filter((instrument): instrument is NonNullable<typeof instrument> => Boolean(instrument));
   const afterExclusions = applyManualExclusions(client, weights, initialInstruments);
   const selectedInstruments = applyManualReplacement(client, weights, afterExclusions);
+  const selectedBaseWeights = normalizeSelectedWeights(weights, selectedInstruments);
 
-  const enrichedAllocations = await Promise.all(
+  const enrichedSelections = await Promise.all(
     selectedInstruments.map(async (instrument) => {
       const snapshot = await safeInstrumentSnapshot(instrument);
       const sentiment = await getSentimentForInstrument(`${instrument.name} ${instrument.ticker}`);
@@ -845,14 +869,11 @@ export async function generatePortfolioPlan(client: ClientProfile): Promise<Port
       snapshot.outlookScore = outlook.score;
       snapshot.outlookLabel = outlook.label;
 
-      const weight = weights[instrument.id];
-
       return {
+        instrument,
         instrumentId: instrument.id,
         ticker: instrument.ticker,
         name: instrument.name,
-        weight,
-        amount: Number((client.investmentAmount * weight).toFixed(2)),
         rationale: `${instrument.description} Selected because it fits a ${client.riskLevel}-risk profile, supports a ${client.goal.replace("_", " ") } objective, and ${buildSectorSpecificityNote(client, instrument)}`,
         snapshot,
         expenseRatio: instrument.expenseRatio || 0,
@@ -860,6 +881,33 @@ export async function generatePortfolioPlan(client: ClientProfile): Promise<Port
       };
     })
   );
+
+  const optimizerResult =
+    client.constructionLayerMode === "rule_based"
+      ? {
+          weights: selectedBaseWeights,
+          ...describeConstructionMethod(client)!
+        }
+      : optimizeWeightsWithBlackLitterman(
+          client,
+          enrichedSelections.map((selection) => selection.instrument),
+          selectedBaseWeights,
+          enrichedSelections.map((selection) => selection.snapshot)
+        );
+
+  const optimizedWeights = normalizeSelectedWeights(optimizerResult.weights, selectedInstruments);
+
+  const enrichedAllocations = enrichedSelections.map(({ instrument: _instrument, expenseRatio, incomeYield, ...selection }) => {
+    const weight = optimizedWeights[selection.instrumentId] || 0;
+
+    return {
+      ...selection,
+      weight,
+      amount: Number((client.investmentAmount * weight).toFixed(2)),
+      expenseRatio,
+      incomeYield
+    };
+  });
 
   const weightedExpenseRatio = enrichedAllocations.reduce(
     (sum, allocation) => sum + allocation.weight * allocation.expenseRatio,
@@ -890,6 +938,8 @@ export async function generatePortfolioPlan(client: ClientProfile): Promise<Port
     createdAt: new Date().toISOString(),
     client,
     summary: describePortfolio(client),
+    constructionMethod: optimizerResult.methodSummary,
+    constructionHighlights: optimizerResult.methodHighlights,
     riskExplanation:
       client.riskLevel === "low"
         ? "Low-risk clients get a heavier allocation to cash, Treasuries, and broad bond exposure. Return expectations are steadier, but upside is intentionally capped."
